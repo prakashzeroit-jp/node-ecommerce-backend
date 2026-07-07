@@ -76,3 +76,13 @@ exports.loginUser = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+exports.getUserProfile = async (req, res) => {
+    try {
+        // req.user is attached by the authMiddleware
+        const user = await User.findById(req.user._id).select('-password');
+        res.status(200).json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
