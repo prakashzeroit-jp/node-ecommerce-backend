@@ -78,11 +78,48 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.getUserProfile = async (req, res) => {
-    try {
-        // req.user is attached by the authMiddleware
-        const user = await User.findById(req.user._id).select('-password');
-        res.status(200).json({ success: true, user });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+  try {
+    // req.user is attached by the authMiddleware
+    const user = await User.findById(req.user._id).select("-password");
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    user.username = req.body.username || user.username;
+    user.email = req.body.email || user.email;
+
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      token: generateToken(updatedUser._id),
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+      },
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res
+        .status(400)
+        .json({ message: "Username or Email already exists" });
+    }
+    res.status(500).json({ success: false, error: error.message });
+  }
 };
