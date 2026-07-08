@@ -9,6 +9,7 @@ const mongoose =  require('mongoose');
 const PORT = process.env.PORT || 5000;
 connectionDB();
 app.use(express.json());
+app.use(express.urlencoded({extended :true}));
 app.use('/api/auth',authRoutes);
 
 

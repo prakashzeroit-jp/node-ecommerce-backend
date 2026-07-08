@@ -2,6 +2,7 @@ const User = require("../models/User");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const Blacklist = require("../models/Blacklist");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -172,8 +173,8 @@ exports.forgotPassword = async (req, res) => {
 
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT), 
-      secure: false, 
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -231,6 +232,25 @@ exports.resetPassword = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Password reset successful. You can now log in.",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Logout user / Invalidate Token (Protected)
+// POST /api/auth/logout
+exports.logoutUser = async (req, res) => {
+  try {
+    // Extract token from "Bearer <token>"
+    const token = req.headers.authorization.split(" ")[1];
+
+    // Save token to blacklist database
+    await Blacklist.create({ token });
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully. Token safely invalidated.",
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
