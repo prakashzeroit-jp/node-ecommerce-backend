@@ -30,4 +30,21 @@ const createProduct = async (req, res) => {
   }
 };
 
-module.exports = { createProduct };
+const getProducts = async (req, res) => {
+  try {
+    const products = await Product.find({}).populate(
+      "category",
+      "name description",
+    );
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+module.exports = { createProduct ,getProducts};
