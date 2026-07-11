@@ -34,23 +34,74 @@ const createProduct = async (req, res) => {
 const getProducts = async (req, res) => {
   try {
     let query = {};
+
+    // ==========================================
+    // MODULE PARt 1: Search by Product Name
+    // ==========================================
     if (req.query.search) {
-      query.name = {
-        $regex: req.query.search, 
-        $options: 'i'              // 'i' for Case-Insensitive (Capital/Small letter both ok)
-      };
+      query.name = { $regex: req.query.search, $options: 'i' };
     }
-    const products = await Product.find(query).populate('category', 'name description');
+    // ==========================================
+    // MODULE PART 2: Filter by Category
+    // ==========================================
+    if (req.query.category) {
+      query.category = req.query.category; //match  Category  ID 
+    }
+
+    // ==========================================
+    // MODULE PART 3: Filter by Price Range (Min & Max Price)
+    // ==========================================
+    if (req.query.minPrice || req.query.maxPrice) {
+      query.price = {};
+      if (req.query.minPrice) {
+        query.price.$gte = Number(req.query.minPrice);
+      }
+      if (req.query.maxPrice) {
+        query.price.$lte = Number(req.query.maxPrice); 
+      }
+    }
+
+    let apiQuery = Product.find(query).populate('category', 'name description');
+
+    // ==========================================
+    // MODULE PART 4 & 5: Sort by Price & Latest Products
+    // ==========================================
+    if (req.query.sortBy) {
+      if (req.query.sortBy === 'priceAsc') apiQuery = apiQuery.sort({ price: 1 });
+      if (req.query.sortBy === 'priceDesc') apiQuery = apiQuery.sort({ price: -1 });
+      if (req.query.sortBy === 'latest') apiQuery = apiQuery.sort({ createdAt: -1 });
+    } else {
+      apiQuery = apiQuery.sort({ createdAt: -1 });
+    }
+    // ==========================================
+    // MODULE PART 6: Pagination (Pages aur Limits)
+    // ==========================================
+    const page = Number(req.query.page) || 1;        // if  not page  send  default 1
+    const limit = Number(req.query.limit) || 10;     // How many products should be displayed on a page (Default 10)
+    const skip = (page - 1) * limit;                 // How many products should be skipped
+
+
+    apiQuery = apiQuery.skip(skip).limit(limit);
+
+    // 3. FINALLY: fetch  data from database
+    const products = await apiQuery;
+
+    const totalProducts = await Product.countDocuments(query);
 
     res.status(200).json({
       success: true,
       count: products.length,
+      totalProducts,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
       data: products
     });
+
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
+
 
 const getProductById = async (req, res) => {
   try {
