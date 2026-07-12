@@ -50,4 +50,22 @@ const addToCart = async (req, res) => {
   }
 };
 
-module.exports = { addToCart };
+const viewCart =  async (req,res)=>{
+    try{
+      const cart =   await Cart.findOne({user : req.user.id}).populate({
+        path : 'items.product',
+        select : 'name price images stock'
+      });
+
+  if(!cart){
+    return res.status(200).json({success : true,message : 'cart  is  empty',data :  {items : []}});
+  }
+
+  res.status(200).json({success : true,count : cart.items.length,data : cart});
+
+    }catch(error){
+   res.status(500).json({success : false,message : 'Ineternal server error',error : error.message});
+    }
+}
+
+module.exports = { addToCart,viewCart };
