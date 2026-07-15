@@ -45,4 +45,29 @@ const addToWishlist = async (req, res) => {
   }
 };
 
-module.exports = { addToWishlist };
+const getWishlist = async (req, res) => {
+  try {
+    const wishlist = await Wishlist.findOne({ user: req.user.id }).populate(
+      "products",
+      "name price image stock",
+    );
+
+    if (!wishlist) {
+      return res.status(200).json({ success: true, data: { products: [] } });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: wishlist.products.length,
+      data: wishlist,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { addToWishlist ,getWishlist};
