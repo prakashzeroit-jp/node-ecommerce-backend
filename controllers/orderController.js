@@ -25,7 +25,7 @@ const placeOrder = async (req, res) => {
       };
     });
 
-    const oreder = await Order.create({
+    const order = await Order.create({
       user: userId,
       orderItems,
       shippingAddress,
@@ -38,7 +38,7 @@ const placeOrder = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Order placed Successfully",
-      data: oreder,
+      data: order,
     });
   } catch (error) {
     res.status(500).json({
@@ -93,4 +93,36 @@ const getOrderDetails = async (req, res) => {
   }
 };
 
-module.exports = { placeOrder, getOrderHistory, getOrderDetails };
+const cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "order not  found" });
+    }
+
+    if (order.status !== "Pending") {
+      return res.status(400).json({
+        success: false,
+        message: ` cannot cancel order . Order status is already ${oreder.status}`,
+      });
+    }
+
+    order.status = "cancelled";
+    await order.save();
+
+    res.status(200).json({
+      success: false,
+      message: "Order cancelled  Successfully",
+      data: order,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal  server error",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { placeOrder, getOrderHistory, getOrderDetails, cancelOrder };
