@@ -49,5 +49,19 @@ const placeOrder = async (req, res) => {
   }
 };
 
+const getOrderHistory = async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id }).sort({
+      createdAt: -1,
+    });
+    res.status(200).json({ success: true, count: orders.length, data: orders });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
 
-module.exports = {placeOrder};
+module.exports = { placeOrder,getOrderHistory };
