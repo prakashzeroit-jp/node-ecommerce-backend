@@ -1,0 +1,53 @@
+const Order = require("../models/Order");
+const Cart = require("../models/Cart");
+
+const placeOrder = async (req, res) => {
+  try {
+    const { shippingAddress } = req.body;
+    const userId = req.user._id;
+
+    const cart = await Cart.findOne({ user: userId }).populate("items.product");
+
+    if (!cart || !cart.items.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Your  cart  is empty" });
+    }
+    let totalPrice = 0;
+    const orderItems = cart.items.map((item) => {
+      const itemPrice = item.product.price;
+      totalPrice += itemPrice * item.quantity;
+
+      return {
+        product: item.product._id,
+        quantity: item.quantity,
+        price: itemPrice,
+      };
+    });
+
+    const oreder = await Order.create({
+      user: userId,
+      orderItems,
+      shippingAddress,
+      totalPrice,
+    });
+
+    cart.items = [];
+    await cart.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Order placed Successfully",
+      data: oreder,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal  server  error",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = {placeOrder};
