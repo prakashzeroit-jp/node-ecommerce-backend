@@ -50,4 +50,34 @@ const addProductReview = async (req, res) => {
   }
 };
 
-module.exports = { addProductReview };
+const updateProductReview = async (req,res) =>{
+try{
+ const { rating ,comment } = req.body;
+ const product = await Product.findById(req.params.id);
+
+ if(!product){
+   return  res.status(404).json({message : 'Product not found'});
+ }
+
+ const review = product.reviews.find((r)=>r.user.toString() === r.user._id.toString());
+
+ if(!review){
+   return res.status(404).json({success : false, message : 'Review not found'});
+ }
+
+ if(rating) review.rating = Number(rating);
+ if(comment) review.comment = comment;
+ 
+ product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+
+    await product.save();
+    res.status(200).json({ success: true, message: 'Review updated successfully', data: product });
+
+
+}catch(error){
+   res.status(500).json({success : false,messsage : 'Internal  server Error',error : error.message});
+}
+
+}  
+
+module.exports = { addProductReview ,updateProductReview};
